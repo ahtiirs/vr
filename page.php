@@ -1,4 +1,13 @@
 <?php
+	//session_start();
+	require("classes/SessionManager.class.php");
+	SessionManager::sessionStart("vr", 0, "/~ahti.irs/", "tigu.hk.tlu.ee");
+	
+	require_once "../../../conf.php";
+	//require_once "fnc_general.php";
+	require_once "fnc_user.php";
+
+
     $myname = "Ahti Irs";
     $currenttime = date("d.m.Y H:i:s");                                         // hetke kuupäev ja kellaaeg muutujasse currenttime
     $timehtml="\n <p> Lehe avamise hetk oli:".$currenttime.".</p> \n";          // koostame html osa jaoks vormindatud muutuja kellaaja ja kuupäevaga
@@ -13,7 +22,7 @@
    
     //$today = new DateTime("now");                                             // määratakse tänane kuupäev millega hakatakse võrdlema semestri algust ja lõppu
     $today = date_create();                                                     // määrab mutuja tüübi
-    $today->setDate(2020, 4, 10);                                               // <-- siin saab ise kastetamiseks tänase kuupäeva sisestada minevikku või tulevikku
+    //$today->setDate(2020, 4, 10);                                               // <-- siin saab ise kastetamiseks tänase kuupäeva sisestada minevikku või tulevikku
 
 //----- Semestri kulgemise määramine ----------------------
     $fromsemesterbegin = $semesterbegin->diff($today);                          // diff funk. abiga saame ajavahemiku semestri algusest tänaseni
@@ -69,6 +78,26 @@
 //---------------------------------------------------------
 
 //----- Selles sektsioonis on HTML mille vahele on pandud eelnevalt PHP's koostatud muutujad
+
+	//sisselogimine
+	$notice = null;
+	$email = null;
+	$email_error = null;
+	$password_error = null;
+	if(isset($_POST["login_submit"])){
+		//kontrollime, kas email ja password põhimõtteliselt olemas
+		
+        if (verify_user($_POST["email_input"]) == 1){
+
+            $notice = sign_in($_POST["email_input"], $_POST["password_input"]);
+
+        } else {
+            $notice = "Sellist kasutajanime pole";
+        }
+		
+	}
+
+
 ?>
 
 <!DOCTYPE html>
@@ -80,6 +109,19 @@
 <body>
 	<h1><?php echo $myname; ?></h1>
 	<p>See leht on valminud õppetöö raames!</p>
+
+    <hr>
+	<h2>Logi sisse</h2>
+	<form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+		<label>E-mail (kasutajatunnus):</label><br>
+		<input type="email" name="email_input" value="<?php echo $email; ?>"><span><?php echo $email_error; ?></span><br>
+		<label>Salasõna:</label><br>
+		<input name="password_input" type="password"><span><?php echo $password_error; ?></span><br>
+		<input name="login_submit" type="submit" value="Logi sisse!"><span><?php echo $notice; ?></span>
+	</form>
+	<p>Loo endale <a href="add_user.php">kasutajakonto!</a></p>
+	<hr>
+
     <?php
     echo $semesterprogress;  
     echo $semesterdurhtml;  
