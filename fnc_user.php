@@ -56,7 +56,7 @@
 		echo $conn -> error;
 		$stmt -> bind_param("s", $email);
 		$stmt -> execute();
-		var_dump(get_object_vars($stmt));
+		//var_dump(get_object_vars($stmt));
 
 		if($stmt -> fetch()){
 			$notice = 1;

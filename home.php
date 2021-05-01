@@ -24,7 +24,7 @@
 	<p><a href="?logout=1">Logi välja</a></p>
     <p><a href="home.php">Home</a> 
     <a href="show_news.php">Uudised</a></p>
-
+    <a href="upload_photo.php">Lisa pilt</a></p>
 
 	<h1>Sisseloginud kasutaja, vinge süsteem</h1>
 	<p>See leht on valminud õppetöö raames!</p>
