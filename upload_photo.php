@@ -2,6 +2,8 @@
 	require_once "usesession.php";
 	require_once "../../../conf.php";
 	require_once "fnc_general.php";
+	require_once "fnc_user.php";
+	require_once "classes/clean_input.php";
 	
 	$photo_upload_error = null;
 	$image_file_type = null;
@@ -10,12 +12,15 @@
 	$file_size_limit = 1 * 1024 * 1024;
 	$image_max_w = 600;
 	$image_max_h = 400;
+
 	if(isset($_POST["photo_submit"])){
 		//var_dump($_POST);
 		//var_dump($_FILES);
 		//kas üldse on pilt
 		$check = getimagesize($_FILES["file_input"]["tmp_name"]);
+
 		if($check !== false){
+
 			//kontrollime, kas aktepteeritud failivorming ja fikseerime laiendi
 			if($check["mime"] == "image/jpeg"){
 				$image_file_type = "jpg";
@@ -38,9 +43,7 @@
 				//loome oma failinime
 				$timestamp = microtime(1) * 10000;
 				$image_file_name = $file_name_prefix .$timestamp ."." .$image_file_type;
-				
-				//suuruse muutmine
-				//loome pikslikogumi ehk image objekti
+
 				$temp_image = null;
 				if($image_file_type == "jpg"){
 					$temp_image = imagecreatefromjpeg($_FILES["file_input"]["tmp_name"]);
@@ -48,26 +51,14 @@
 				if($image_file_type == "png"){
 					$temp_image = imagecreatefrompng($_FILES["file_input"]["tmp_name"]);
 				}
+	
 				
-				$image_w = imagesx($temp_image);
-				$image_h = imagesy($temp_image);
+//-- loome normaalsuuruses pildi säilitades külgede proportsiooni
+				$new_temp_image = resize_image($temp_image, 600, 400, true);
 				
-				//kuvasuhte säilitamiseks arvutame suuruse muutuse kordaja lähtudes kõrgusest või laiusest
-				if($image_w / $image_max_w > $image_h / $image_max_h){
-					$image_size_ratio = $image_w / $image_max_w;
-				} else {
-					$image_size_ratio = $image_h / $image_max_h;
-				}
-				
-				$image_new_w = round($image_w / $image_size_ratio);
-				$image_new_h = round($image_h / $image_size_ratio);
-				
-				//vähendamiseks loome uue image objekti, kuhu kopeerime vähendatud kujutise
-				$new_temp_image = imagecreatetruecolor($image_new_w, $image_new_h);
-				imagecopyresampled($new_temp_image, $temp_image, 0, 0, 0, 0, $image_new_w, $image_new_h, $image_w, $image_h);
-				
-				//salvestame pikslikgumi faili
+				//salvestame pikslikogumi mälumuutjujast faili
 				$target_file = "../upload_photos_normal/" .$image_file_name;
+				
 				if($image_file_type == "jpg"){
 					if(imagejpeg($new_temp_image, $target_file, 90)){
 						$photo_upload_error = "Vähendatud pilt on salvestatud!";
@@ -82,20 +73,51 @@
 						$photo_upload_error = "Vähendatud pilti ei salvestatud!";
 					}
 				}
+
+
+//-- loome pisipildi ruuduna lõigates selle originaalpildi keskelt kahandades 100 pixlile
+
+				$new_temp_image = resize_image($temp_image, 100, 100, false );
 				
-				
-				//$target_file = "../upload_photos_orig/" .$_FILES["file_input"]["name"];
+				//salvestame pikslikogumi faili
+				$target_file = "../upload_photos_small/" .$image_file_name;
+
+				if($image_file_type == "jpg"){
+					if(imagejpeg($new_temp_image, $target_file, 90)){
+						$photo_upload_error = "Vähendatud pilt on salvestatud!";
+					} else {
+						$photo_upload_error = "Vähendatud pilti ei salvestatud!";
+					}
+				}
+				if($image_file_type == "png"){
+					if(imagepng($new_temp_image, $target_file, 6)){
+						$photo_upload_error = "Vähendatud pilt on salvestatud!";
+					} else {
+						$photo_upload_error = "Vähendatud pilti ei salvestatud!";
+					}
+				}
+
+//-- säilitame ka üleslaetud originaalfaili eraldi kasutas  
 				$target_file = "../upload_photos_orig/" .$image_file_name;
-				//if(file_exists($target_file))
+
 				if(move_uploaded_file($_FILES["file_input"]["tmp_name"], $target_file)){
 					$photo_upload_error .= " Foto üleslaadimine õnnestus!";
+					if (insert_pic_db(Input::str($_FILES["file_input"]["name"]),$image_file_name,Input::str($_POST['alt_text']),Input::int($_POST['privacy_input'])) == 1){
+						$photo_upload_error .= "  Foto andmete lisamine andmebaasi õnnestus";
+					} else {
+						$photo_upload_error .= "  Foto andmete lisamine ebaõnnestus";
+					}
+
 				} else {
 					$photo_upload_error .= " Foto üleslaadimine ebaõnnestus!";
 				}
 			}
 		}
 	}
+
 	
+
+
 ?>
 <!DOCTYPE html>
 <html lang="et">
