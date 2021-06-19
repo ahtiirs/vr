@@ -134,10 +134,19 @@
   <head>
     <meta charset="utf-8">
 	<title>Veebirakendused ja nende loomine 2021</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
   </head>
+
+
   <body>
+
+  	<header>
+        <?php include("page_detail/nav_bar.php"); ?>
+	</header>
+
     <h1>Loo endale kasutajakonto</h1>
-	<p>See leht on valminud õppetöö raames!</p>
+
 	<hr>
 	
 	<form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
@@ -207,5 +216,8 @@
 	<hr>
 	<p>Tagasi <a href="page.php">avalehele</a></p>
     <hr>
+
+	<?php require("page_detail/scripts.php") ?>
+
   </body>
 </html>

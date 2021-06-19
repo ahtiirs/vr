@@ -4,133 +4,84 @@
 	require_once "fnc_general.php";
 	require_once "fnc_user.php";
 	require_once "classes/clean_input.php";
+	require_once "classes/Upload_photo.class.php";	
 	
 	$photo_upload_error = null;
-	$image_file_type = null;
-	$image_file_name = null;
-	$file_name_prefix = "vr_";
 	$file_size_limit = 1 * 1024 * 1024;
 	$image_max_w = 600;
 	$image_max_h = 400;
+	$watermark = "../images/vr_watermark.png";
+	$path_small = "../upload_photos_small/";
+	$path_normal ="../upload_photos_normal/";
+	$path_orig = "../upload_photos_orig/";
 
 	if(isset($_POST["photo_submit"])){
-		//var_dump($_POST);
-		//var_dump($_FILES);
-		//kas üldse on pilt
-		$check = getimagesize($_FILES["file_input"]["tmp_name"]);
 
-		if($check !== false){
+			$photo_upload = new Upload_photo($_FILES["file_input"],$file_size_limit);
 
-			//kontrollime, kas aktepteeritud failivorming ja fikseerime laiendi
-			if($check["mime"] == "image/jpeg"){
-				$image_file_type = "jpg";
-			} elseif ($check["mime"] == "image/png"){
-				$image_file_type = "png";
-			} else {
-				$photo_upload_error = "Pole sobiv formaat! Ainult jpg ja png on lubatud!";
-			}
-		} else {
-			$photo_upload_error = "Tegemist pole pildifailiga!";
-		}
-		
-		if(empty($photo_upload_error)){
-			//ega pole liiga suur fail
-			if($_FILES["file_input"]["size"] > $file_size_limit){
-				$photo_upload_error = "Valitud fail on liiga suur! Lubatud kuni 1MiB!";
-			}
+			if(empty($photo_upload->error)){
+			//-- loome normaalsuuruses pildi säilitades külgede proportsiooni
+				$photo_upload->resize_photo($image_max_w,$image_max_h, true);
+				$photo_upload_error .= $photo_upload->error;
+				
+			//-- Lisan vesimärgi
+				$photo_upload->add_watermark($watermark);
 			
-			if(empty($photo_upload_error)){
-				//loome oma failinime
-				$timestamp = microtime(1) * 10000;
-				$image_file_name = $file_name_prefix .$timestamp ."." .$image_file_type;
+			//-- Lisan pildistamise kuupäeva	
+				$photo_upload->date_to_pic();
 
-				$temp_image = null;
-				if($image_file_type == "jpg"){
-					$temp_image = imagecreatefromjpeg($_FILES["file_input"]["tmp_name"]);
+			//-- Salvestame pildi normal kataloogi	
+				$photo_upload->save_image_to_file($path_normal); 
+				$photo_upload_error .= $photo_upload->error;
+
+			//-- Loome pisipildi ruuduna lõigates selle originaalpildi keskelt kahandades 100 pixlile
+				$photo_upload->resize_photo( 100, 100, false );
+
+			//-- Salvestame pildi small kataloogi
+				$photo_upload->save_image_to_file($path_small); 
+				$photo_upload_error .= $photo_upload->error;
+					
+			//-- Säilitame ka üleslaetud originaalfaili eraldi kasutas  
+				$photo_upload->save_orig_image($path_orig);
+				$photo_upload_error .= $photo_upload->error;
+			
+			//-- Lisame pildi andmed andmebaasi
+				if(empty($photo_upload_error)){
+					$check = insert_pic_db($photo_upload->image_new_filename,Input::str($_FILES["file_input"]["name"]),Input::str($_POST['alt_text']),Input::int($_POST['privacy_input']));
 				}
-				if($image_file_type == "png"){
-					$temp_image = imagecreatefrompng($_FILES["file_input"]["tmp_name"]);
-				}
-	
-				
-//-- loome normaalsuuruses pildi säilitades külgede proportsiooni
-				$new_temp_image = resize_image($temp_image, 600, 400, true);
-				
-				//salvestame pikslikogumi mälumuutjujast faili
-				$target_file = "../upload_photos_normal/" .$image_file_name;
-				
-				if($image_file_type == "jpg"){
-					if(imagejpeg($new_temp_image, $target_file, 90)){
-						$photo_upload_error = "Vähendatud pilt on salvestatud!";
-					} else {
-						$photo_upload_error = "Vähendatud pilti ei salvestatud!";
-					}
-				}
-				if($image_file_type == "png"){
-					if(imagepng($new_temp_image, $target_file, 6)){
-						$photo_upload_error = "Vähendatud pilt on salvestatud!";
-					} else {
-						$photo_upload_error = "Vähendatud pilti ei salvestatud!";
-					}
-				}
-
-
-//-- loome pisipildi ruuduna lõigates selle originaalpildi keskelt kahandades 100 pixlile
-
-				$new_temp_image = resize_image($temp_image, 100, 100, false );
-				
-				//salvestame pikslikogumi faili
-				$target_file = "../upload_photos_small/" .$image_file_name;
-
-				if($image_file_type == "jpg"){
-					if(imagejpeg($new_temp_image, $target_file, 90)){
-						$photo_upload_error = "Vähendatud pilt on salvestatud!";
-					} else {
-						$photo_upload_error = "Vähendatud pilti ei salvestatud!";
-					}
-				}
-				if($image_file_type == "png"){
-					if(imagepng($new_temp_image, $target_file, 6)){
-						$photo_upload_error = "Vähendatud pilt on salvestatud!";
-					} else {
-						$photo_upload_error = "Vähendatud pilti ei salvestatud!";
-					}
-				}
-
-//-- säilitame ka üleslaetud originaalfaili eraldi kasutas  
-				$target_file = "../upload_photos_orig/" .$image_file_name;
-
-				if(move_uploaded_file($_FILES["file_input"]["tmp_name"], $target_file)){
-					$photo_upload_error .= " Foto üleslaadimine õnnestus!";
-					if (insert_pic_db(Input::str($_FILES["file_input"]["name"]),$image_file_name,Input::str($_POST['alt_text']),Input::int($_POST['privacy_input'])) == 1){
-						$photo_upload_error .= "  Foto andmete lisamine andmebaasi õnnestus";
-					} else {
-						$photo_upload_error .= "  Foto andmete lisamine ebaõnnestus";
-					}
-
+			 
+				if ($check ==1){
+					$photo_upload_error .= "  Foto andmete lisamine andmebaasi õnnestus";
 				} else {
-					$photo_upload_error .= " Foto üleslaadimine ebaõnnestus!";
+					$photo_upload_error .= "  Foto andmete lisamine ebaõnnestus";
 				}
-			}
-		}
+			} 
 	}
 
 	
 
+//-- HTML osa lehe väljastamiseks
 
 ?>
 <!DOCTYPE html>
 <html lang="et">
 <head>
 	<meta charset="utf-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
 	<title>Veebirakendused ja nende loomine 2021</title>
+	<script src="checkImageSize.js"> defer </script>
+
+
 </head>
+
+<header>
+        <?php include("page_detail/nav_bar.php"); ?>
+</header>
+
 <body>
 	<h1>Fotode üleslaadimine</h1>
-	<p>See leht on valminud õppetöö raames!</p>
-	<hr>
-	<p><a href="?logout=1">Logi välja</a></p>
-	<p><a href="home.php">Avalehele</a></p>
+
 	<hr>
 	<form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" enctype="multipart/form-data">
 		<label for="file_input">Vali foto fail! </label>
@@ -150,8 +101,10 @@
 		<input id="privacy_input_3" name="privacy_input" type="radio" value="1">
 		<label for="privacy_input_3">Avalik</label>
 		<br>
-		<input type="submit" name="photo_submit" value="Lae pilt üles!">
+		<input type="submit" id="photo_submit" name="photo_submit" value="Lae pilt üles!">
 	</form>
-	<p><?php echo $photo_upload_error; ?></p>
+	<p id="notice"><?php echo $photo_upload_error; ?></p>
+
+	<?php require("page_detail/scripts.php") ?>	
 </body>
 </html>

@@ -57,7 +57,8 @@
 //----- Loeme piltide kataloogi sisu ----------------------
 
     //$picsdir = "../../../andrus.rinde/vr2021/pics/";
-    $picsdir = "Pildid/";                                                       // Selles kataloogis asuvad pildid 
+    $picsdir = "../Pildid/";                                                       // Selles kataloogis asuvad pildid 
+
 
     $allfiles = array_slice(scandir($picsdir),2);                               // scannitakse massiivi piltide kataloogis olevad failinimed ja lõigatakse esimesed kaks maha
     $allowphototypes=["image/jpeg", "image/png"];                               // massiivi lisatakse lubatud failitüüpide kirjeldused
@@ -105,10 +106,17 @@
 <head>
 	<meta charset="utf-8">
 	<title>Veebirakendused ja nende loomine 2021</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-	<h1><?php echo $myname; ?></h1>
-	<p>See leht on valminud õppetöö raames!</p>
+
+    <header>
+        <?php include("page_detail/nav_bar.php"); ?>
+    </header>
+
+	<!-- <h1><?php echo $myname; ?></h1> -->
+	<p>See leht on valminud  õppetöö raames Ahti Irs poolt A. Rinde juhendamisel!</p>
 
     <hr>
 	<h2>Logi sisse</h2>
@@ -128,8 +136,11 @@
     echo $timehtml; 
     echo $todaysweekdayhtml;
     ?>
-    <img width="250px" src="<?php echo $picsdir .$picfiles[$randomphoto[0]]; ?>" alt="RIF20">
-    <img width="250px" src="<?php echo $picsdir .$picfiles[$randomphoto[1]]; ?>" alt="RIF20">
-    <img width="250px" src="<?php echo $picsdir .$picfiles[$randomphoto[2]]; ?>" alt="RIF20">
+    <div class="grid gallery">
+    <img class="rand_pic" src="<?php echo $picsdir .$picfiles[$randomphoto[0]]; ?>" alt="RIF20">
+    <img class="rand_pic" src="<?php echo $picsdir .$picfiles[$randomphoto[1]]; ?>" alt="RIF20">
+    <img class="rand_pic" src="<?php echo $picsdir .$picfiles[$randomphoto[2]]; ?>" alt="RIF20">
+    </div>
+	<?php require("page_detail/scripts.php") ?>
 </body>
 </html>

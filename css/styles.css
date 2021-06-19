@@ -1,0 +1,16 @@
+
+h1{
+    color: blue;
+}
+
+body,
+a,
+a:visited{
+    color:#f8f9fa}
+.img-fluid{
+    height:intrinsic}
+input{
+    margin-bottom:20px !important}
+main{
+    padding-top:85px}
+
